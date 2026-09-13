@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "CapFlow",
+    "slug": "capflow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "capflow",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.altixcode.capflow",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "CapFlow reads the video you choose so it can caption it. Nothing is uploaded.",
+        "NSPhotoLibraryAddUsageDescription": "CapFlow saves the captioned video back to your photo library."
+      }
+    },
+    "android": {
+      "package": "com.altixcode.capflow",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CapFlow reads the video you choose so it can caption it. Nothing is uploaded."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "CapFlow reads the video you choose so it can caption it.",
+          "savePhotosPermission": "CapFlow saves the captioned video back to your photo library.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      "./plugins/withIOSSceneLifecycle",
+      "./plugins/withAndroidRtl"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

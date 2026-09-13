@@ -6,7 +6,7 @@ import {
   restorePurchases,
   PurchaseOutcome,
 } from "../services/purchases";
-import { useScriptStore } from "../store/useScriptStore";
+import { useCaptionStore } from "../store/useCaptionStore";
 import { t } from "../i18n";
 
 /**
@@ -14,7 +14,7 @@ import { t } from "../i18n";
  * the two surfaces cannot drift in how they price, unlock, or report failure.
  */
 export function usePaywall(onUnlocked: () => void) {
-  const { setIsPro } = useScriptStore();
+  const { setIsPro } = useCaptionStore();
   const [priceString, setPriceString] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
