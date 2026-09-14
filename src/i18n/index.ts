@@ -1053,14 +1053,44 @@ export function isRTL(): boolean {
  * CLDR plural category for `count` in the active language, e.g. "one" or
  * "other" in English, which also has "few"/"many" in Russian and Arabic.
  *
- * Falls back to an English-style one/other split where Intl.PluralRules is
- * unavailable, which is still better than always rendering the plural form.
+ * The CLDR cardinal rules for the languages this app ships in, written out
+ * rather than taken from Intl.PluralRules. Hermes does not bundle a CLDR
+ * plural database, so asking it for Russian answers as if the locale were
+ * English -- silently, and only on the phone, since Node has full ICU.
  */
 function pluralCategory(count: number): string {
-  try {
-    return new Intl.PluralRules(currentLanguage).select(count);
-  } catch {
-    return count === 1 ? 'one' : 'other';
+  const n = Math.abs(count);
+  const i = Math.floor(n);
+  const mod10 = i % 10;
+  const mod100 = i % 100;
+
+  switch (currentLanguage) {
+    // No grammatical plural: one form covers every count.
+    case 'zh':
+    case 'ja':
+    case 'ko':
+      return 'other';
+
+    case 'ru':
+      if (mod10 === 1 && mod100 !== 11) return 'one';
+      if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'few';
+      return 'many';
+
+    case 'ar':
+      if (n === 0) return 'zero';
+      if (n === 1) return 'one';
+      if (n === 2) return 'two';
+      if (mod100 >= 3 && mod100 <= 10) return 'few';
+      if (mod100 >= 11 && mod100 <= 99) return 'many';
+      return 'other';
+
+    // French and Portuguese put 0 in the singular, unlike English.
+    case 'fr':
+    case 'pt':
+      return i === 0 || i === 1 ? 'one' : 'other';
+
+    default:
+      return n === 1 ? 'one' : 'other';
   }
 }
 
