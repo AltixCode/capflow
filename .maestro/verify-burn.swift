@@ -120,17 +120,56 @@ Task {
     let bandStart = Int(Double(height) * bandTop)
     let bandEnd = Int(Double(height) * bandBottom)
 
+    // Two encoders do not agree on timestamps to the frame: iOS writes the
+    // source's own times, Android's muxer starts a frame late and runs the file
+    // a fraction longer, so the two drift apart over the clip. Comparing
+    // frame-for-frame at identical timestamps then reports a moving background
+    // as "the video changed" -- a timing difference, not the geometry error
+    // this check exists to catch. So each sample is matched against the nearest
+    // few source frames and scored on its best match: a real rescale or shift
+    // matches nothing, while a frame of timing slop matches exactly.
+    let frameStep = 1.0 / 30
+    let span = min(sourceSeconds, exportSeconds)
     var inkByTime: [(Double, Double)] = []
     var outsideWorst = 0.0
+    var worstOffset = 0.0
     var time = 0.05
-    while time < min(sourceSeconds, exportSeconds) - 0.05 {
-      let at = CMTime(seconds: time, preferredTimescale: 600)
-      let a = luma(try sourceFrames.copyCGImage(at: at, actualTime: nil), width: width, height: height)
-      let b = luma(try exportFrames.copyCGImage(at: at, actualTime: nil), width: width, height: height)
-      inkByTime.append((time, changedFraction(a, b, width: width, rowStart: bandStart, rowEnd: bandEnd)))
+    while time < span - 0.05 {
+      let exported = luma(
+        try exportFrames.copyCGImage(at: CMTime(seconds: time, preferredTimescale: 600), actualTime: nil),
+        width: width, height: height)
+
+      var bestOutside = Double.infinity
+      var bestBand = Double.infinity
+      var bestOffset = 0.0
+      // Ordered by distance, nearest first, so that when several offsets match
+      // equally well -- which they do whenever the compared region is flat --
+      // the frame at the same timestamp wins. Scanning -3 upward instead let a
+      // tie pick a frame three steps away, and the caption region was then
+      // compared against the wrong frame: the source measured 7% "caption
+      // coverage" against itself, and a burn that produced no captions at all
+      // would have passed.
+      for step in [0, -1, 1, -2, 2, -3, 3] {
+        let at = time + Double(step) * frameStep
+        guard at > 0, at < span else { continue }
+        let source = luma(
+          try sourceFrames.copyCGImage(at: CMTime(seconds: at, preferredTimescale: 600), actualTime: nil),
+          width: width, height: height)
+        let outside = changedFraction(exported, source, width: width, rowStart: 0, rowEnd: bandStart)
+        if outside < bestOutside {
+          bestOutside = outside
+          bestOffset = Double(step) * frameStep
+          bestBand = changedFraction(exported, source, width: width, rowStart: bandStart, rowEnd: bandEnd)
+        }
+      }
+
+      inkByTime.append((time, bestBand))
       // Everything above the caption band has to survive the burn untouched.
-      outsideWorst = max(outsideWorst, changedFraction(a, b, width: width, rowStart: 0, rowEnd: bandStart))
-      time += 0.1
+      if bestOutside > outsideWorst {
+        outsideWorst = bestOutside
+        worstOffset = bestOffset
+      }
+      time += 0.2
     }
 
     guard !inkByTime.isEmpty else {
@@ -154,8 +193,9 @@ Task {
       failures.append(String(format: "the video outside the caption band changed (%.2f%%): it was rescaled, shifted or re-rendered", outsideWorst * 100))
     }
 
-    notes.append(String(format: "%dx%d, %.2fs, peak caption coverage %.1f%%, frame drift %.2f%%",
-                        Int(exportSize.width), Int(exportSize.height), exportSeconds, peak * 100, outsideWorst * 100))
+    notes.append(String(format: "%dx%d, %.2fs, peak caption coverage %.1f%%, frame drift %.2f%%, timing offset %.0f ms",
+                        Int(exportSize.width), Int(exportSize.height), exportSeconds, peak * 100,
+                        outsideWorst * 100, worstOffset * 1000))
   } catch let failure as Failure {
     failures.append(failure.message)
   } catch {

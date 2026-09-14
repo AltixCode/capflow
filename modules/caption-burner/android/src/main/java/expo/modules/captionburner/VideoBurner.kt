@@ -6,6 +6,7 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.media.MediaMuxer
+import android.util.Log
 import android.opengl.Matrix
 import java.io.File
 import java.nio.ByteBuffer
@@ -27,7 +28,12 @@ import java.nio.ByteBuffer
  */
 internal object VideoBurner {
 
+  private const val TAG = "CaptionBurner"
+
   class BurnFailure(message: String) : Exception(message)
+
+  /** How long the encoder gets to flush after end of stream. */
+  private const val DRAIN_TIMEOUT_MS = 30_000L
 
   fun burn(
     inputPath: String,
@@ -94,6 +100,8 @@ internal object VideoBurner {
     var muxerAudioTrack = -1
     var muxerStarted = false
     var currentBox = -2
+    var framesRendered = 0
+    var drainDeadline = 0L
 
     extractor.selectTrack(videoTrack)
     val info = MediaCodec.BufferInfo()
@@ -121,28 +129,49 @@ internal object VideoBurner {
         if (!decoderDone) {
           val index = decoder.dequeueOutputBuffer(info, 10_000)
           if (index >= 0) {
-            val render = info.size > 0
+            val endOfStream = info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0
+            // Not `info.size > 0`. A decoder writing to a Surface does not fill
+            // a byte buffer, so it reports size 0 for perfectly good frames --
+            // the emulator's decoder always does. Taking size as "is there a
+            // frame" renders nothing, which leaves the encoder with no input,
+            // which means it never reaches end of stream: the export sits at 0%
+            // forever rather than failing.
+            val render = !endOfStream
             val timeUs = info.presentationTimeUs
             decoder.releaseOutputBuffer(index, render)
             if (render) {
-              if (pipeline.awaitFrame()) {
-                val boxIndex = plan.indexAt(timeUs)
-                if (boxIndex != currentBox) {
-                  pipeline.setOverlay(
-                    if (boxIndex >= 0) overlayRenderer.render(plan.boxes[boxIndex]) else null
-                  )
-                  currentBox = boxIndex
-                }
-                pipeline.drawFrame(codedWidth, codedHeight, overlayMatrix)
-                pipeline.present(timeUs * 1000)
-                if (durationUs > 0) onProgress((timeUs.toDouble() / durationUs).coerceIn(0.0, 0.99))
+              if (!pipeline.awaitFrame()) {
+                Log.e(TAG, "no frame arrived from the decoder after $framesRendered rendered frames")
+                throw BurnFailure("The video could not be decoded on this device.")
               }
+              val boxIndex = plan.indexAt(timeUs)
+              if (boxIndex != currentBox) {
+                pipeline.setOverlay(
+                  if (boxIndex >= 0) overlayRenderer.render(plan.boxes[boxIndex]) else null
+                )
+                currentBox = boxIndex
+              }
+              pipeline.drawFrame(codedWidth, codedHeight, overlayMatrix)
+              pipeline.present(timeUs * 1000)
+              framesRendered++
+              if (durationUs > 0) onProgress((timeUs.toDouble() / durationUs).coerceIn(0.0, 0.99))
             }
-            if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
+            if (endOfStream) {
               decoderDone = true
+              Log.i(TAG, "decoder reached end of stream after $framesRendered rendered frames")
+              if (framesRendered == 0) {
+                throw BurnFailure("This video produced no frames to caption.")
+              }
               encoder.signalEndOfInputStream()
+              drainDeadline = System.currentTimeMillis() + DRAIN_TIMEOUT_MS
             }
           }
+        }
+
+        // Nothing downstream of end-of-stream is under our control, so the loop
+        // gets a deadline rather than trusting the encoder to always finish.
+        if (decoderDone && drainDeadline > 0 && System.currentTimeMillis() > drainDeadline) {
+          throw BurnFailure("The encoder stopped responding.")
         }
 
         val index = encoder.dequeueOutputBuffer(info, 10_000)

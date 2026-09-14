@@ -17,14 +17,17 @@ import android.graphics.Typeface
 class CaptionOverlayRenderer(
   private val width: Int,
   private val height: Int,
-  private val style: CaptionStyle,
+  // Named for what it is rather than `style`: inside a Paint's apply block that
+  // would resolve to Paint.style, which is a fill/stroke enum, and the class
+  // property becomes unreachable.
+  private val captionStyle: CaptionStyle,
   /** Video pixels per plan unit, in case the decoder reports a different size. */
   private val scale: Float,
 ) {
   private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
     typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
     textAlign = Paint.Align.CENTER
-    color = style.color
+    color = captionStyle.color
   }
   private val stroke = Paint(fill).apply {
     style = Paint.Style.STROKE
@@ -49,20 +52,20 @@ class CaptionOverlayRenderer(
       fill.textSize = fontSize
     }
     stroke.textSize = fontSize
-    stroke.strokeWidth = fontSize * style.strokeRatio
+    stroke.strokeWidth = fontSize * captionStyle.strokeRatio
 
     val lineHeight = box.lineHeight * scale
     val blockTop = box.top * scale
     val blockHeight = lineHeight * box.lines.size
     val centerX = width / 2f
 
-    style.plateColor?.let { color ->
+    captionStyle.plateColor?.let { color ->
       plate.color = color
       val padX = fontSize * 0.42f
       val padY = fontSize * 0.22f
       val fitted = box.lines.maxOf { fill.measureText(it) }
       val plateWidth = minOf(width.toFloat(), fitted + padX * 2)
-      val radius = fontSize * style.plateRadiusRatio
+      val radius = fontSize * captionStyle.plateRadiusRatio
       canvas.drawRoundRect(
         RectF(
           centerX - plateWidth / 2,
@@ -80,8 +83,8 @@ class CaptionOverlayRenderer(
       // drawText places the baseline; the plan measures the top of the line
       // box, so each line drops by the box plus the cap offset.
       val baseline = blockTop + index * lineHeight + (lineHeight + fontSize * 0.72f) / 2
-      if (style.strokeColor != null && style.strokeRatio > 0) {
-        stroke.color = style.strokeColor
+      if (captionStyle.strokeColor != null && captionStyle.strokeRatio > 0) {
+        stroke.color = captionStyle.strokeColor
         canvas.drawText(line, centerX, baseline, stroke)
       }
       canvas.drawText(line, centerX, baseline, fill)

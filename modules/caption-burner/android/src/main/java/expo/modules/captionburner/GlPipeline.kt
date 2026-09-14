@@ -2,6 +2,8 @@ package expo.modules.captionburner
 
 import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
+import android.os.Handler
+import android.os.HandlerThread
 import android.opengl.EGL14
 import android.opengl.EGLConfig
 import android.opengl.EGLContext
@@ -46,6 +48,17 @@ internal class GlPipeline(private val encoderSurface: Surface) {
   private val transform = FloatArray(16)
   private val frameLock = Object()
   private var frameAvailable = false
+
+  /**
+   * The thread the frame callback is delivered on.
+   *
+   * SurfaceTexture's no-handler overload posts to the registering thread's
+   * Looper, or the main thread's if it has none. The burn runs on a background
+   * executor with no Looper, so the callback ends up queued behind whatever the
+   * UI is doing -- and if it never runs, the burn waits for a frame that has
+   * already arrived. Owning the Looper removes the guesswork.
+   */
+  private val callbackThread = HandlerThread("capflow.burn.frames")
 
   private val quad: FloatBuffer = ByteBuffer.allocateDirect(8 * 4)
     .order(ByteOrder.nativeOrder()).asFloatBuffer().apply {
@@ -97,17 +110,25 @@ internal class GlPipeline(private val encoderSurface: Surface) {
     setTextureParameters(GLES20.GL_TEXTURE_2D)
 
     surfaceTexture = SurfaceTexture(frameTexture)
-    surfaceTexture.setOnFrameAvailableListener {
+    callbackThread.start()
+    surfaceTexture.setOnFrameAvailableListener({
       synchronized(frameLock) {
         frameAvailable = true
         frameLock.notifyAll()
       }
-    }
+    }, Handler(callbackThread.looper))
     decoderSurface = Surface(surfaceTexture)
   }
 
-  /** Blocks until the decoder has produced a frame, then binds it. */
-  fun awaitFrame(timeoutMs: Long = 5_000): Boolean {
+  /**
+   * Blocks until the decoder has produced a frame, then binds it.
+   *
+   * The timeout is generous because it is a liveness check, not a deadline: an
+   * emulator with a software GL path takes the better part of a second per
+   * frame, and failing there would report a broken pipeline where there is only
+   * a slow one.
+   */
+  fun awaitFrame(timeoutMs: Long = 20_000): Boolean {
     synchronized(frameLock) {
       val deadline = System.currentTimeMillis() + timeoutMs
       while (!frameAvailable) {
@@ -130,6 +151,10 @@ internal class GlPipeline(private val encoderSurface: Surface) {
     }
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, overlayTexture)
     GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
+    // The pixels live in the texture now. A full-frame caption is about 8 MB,
+    // and a minute of speech changes caption forty times over -- left to the
+    // collector that is enough churn to stall the encode.
+    bitmap.recycle()
     hasOverlay = true
   }
 
@@ -165,6 +190,7 @@ internal class GlPipeline(private val encoderSurface: Surface) {
     surface = EGL14.EGL_NO_SURFACE
     if (::decoderSurface.isInitialized) decoderSurface.release()
     if (::surfaceTexture.isInitialized) surfaceTexture.release()
+    if (callbackThread.isAlive) callbackThread.quitSafely()
   }
 
   private fun draw(program: Int, target: Int, texture: Int, matrix: FloatArray, blend: Boolean) {

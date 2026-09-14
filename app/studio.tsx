@@ -79,6 +79,12 @@ export default function StudioScreen() {
       return;
     }
 
+    // The preview holds a video decoder and redraws every frame while it
+    // plays. The burn needs a decoder and an encoder of its own, and devices
+    // cap how many codec instances exist at once -- so leaving playback running
+    // is not merely wasteful, it is a burn that never receives a frame.
+    player.pause();
+
     setExporting(true);
     setStage('burning', 0);
     const subscription = onBurnProgress(setProgress);
@@ -93,8 +99,9 @@ export default function StudioScreen() {
       subscription.remove();
       setExporting(false);
       setStage('ready');
+      player.play();
     }
-  }, [plan, source, setStage, setProgress]);
+  }, [plan, source, setStage, setProgress, player]);
 
   if (!source || !plan) {
     return (
