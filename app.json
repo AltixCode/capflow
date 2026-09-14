@@ -19,7 +19,22 @@
       "buildNumber": "1",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "CapFlow reads the video you choose so it can caption it. Nothing is uploaded.",
-        "NSPhotoLibraryAddUsageDescription": "CapFlow saves the captioned video back to your photo library."
+        "NSPhotoLibraryAddUsageDescription": "CapFlow saves the captioned video back to your photo library.",
+        "CFBundleLocalizations": [
+          "en",
+          "es",
+          "fr",
+          "de",
+          "ru",
+          "zh",
+          "ja",
+          "pt",
+          "ko",
+          "it",
+          "tr",
+          "el"
+        ],
+        "CFBundleDevelopmentRegion": "en"
       }
     },
     "android": {
@@ -51,7 +66,26 @@
         }
       ],
       "./plugins/withIOSSceneLifecycle",
-      "./plugins/withAndroidRtl"
+      "./plugins/withAndroidRtl",
+      [
+        "./plugins/withAndroidLocales",
+        {
+          "locales": [
+            "en",
+            "es",
+            "fr",
+            "de",
+            "ru",
+            "zh",
+            "ja",
+            "pt",
+            "ko",
+            "it",
+            "tr",
+            "el"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
