@@ -14,6 +14,9 @@ import { cueAt } from '../src/engine/captionGrouper';
 import { useTheme } from '../src/theme/useTheme';
 import { t } from '../src/i18n';
 import { burner, encodePlan, onBurnProgress } from '../modules/caption-burner';
+import { showInterstitial } from '../src/services/ads';
+import { shouldShowInterstitial } from '../src/services/adPolicy';
+import { useAdsStore } from '../src/store/adsStore';
 import { CaptionOverlay } from '../src/components/CaptionOverlay';
 
 export default function StudioScreen() {
@@ -69,6 +72,22 @@ export default function StudioScreen() {
   const activeIndex = useMemo(() => cueAt(cues, time), [cues, time]);
   const activeBox = plan && activeIndex >= 0 ? plan.boxes[activeIndex] : null;
 
+  const maybeShowInterstitial = useCallback(async () => {
+    const { completions, lastInterstitialAt, markInterstitialShown } = useAdsStore.getState();
+    const decision = shouldShowInterstitial({
+      completions,
+      lastInterstitialAt,
+      now: Date.now(),
+      // Read at call time rather than captured: the user may have bought the upgrade from the
+      // paywall between opening this screen and finishing the export.
+      isPro: useCaptionStore.getState().isPro,
+    });
+    if (!decision) return;
+    // Only a shown-and-dismissed ad resets the clock. Counting an unfilled request would
+    // suppress the next several exports' ads for nothing.
+    if (await showInterstitial()) await markInterstitialShown();
+  }, []);
+
   const handleExport = useCallback(async () => {
     if (!source || !plan) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -92,7 +111,14 @@ export default function StudioScreen() {
       const result = await burner.burn(source.uri, encodePlan(plan));
       await MediaLibrary.saveToLibraryAsync(result.uri);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert(t('exported'), t('exportedDesc'));
+      await useAdsStore.getState().recordCompletion();
+      // The ad waits behind the confirmation. Interrupting the moment the export lands -- or
+      // worse, while it runs -- is the version of this that gets one-star reviews; once the
+      // user has read "saved" and tapped through, the work is done and the interruption costs
+      // them nothing they were in the middle of.
+      Alert.alert(t('exported'), t('exportedDesc'), [
+        { text: t('ok'), onPress: () => void maybeShowInterstitial() },
+      ]);
     } catch (error) {
       Alert.alert(t('exportFailed'), error instanceof Error ? error.message : String(error));
     } finally {
@@ -101,7 +127,7 @@ export default function StudioScreen() {
       setStage('ready');
       player.play();
     }
-  }, [plan, source, setStage, setProgress, player]);
+  }, [plan, source, setStage, setProgress, player, maybeShowInterstitial]);
 
   if (!source || !plan) {
     return (

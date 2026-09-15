@@ -85,7 +85,8 @@
             "el"
           ]
         }
-      ]
+      ],
+      "expo-tracking-transparency"
     ],
     "experiments": {
       "typedRoutes": true
