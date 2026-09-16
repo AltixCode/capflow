@@ -12,6 +12,7 @@ import { useCaptionStore } from '../src/store/useCaptionStore';
 import { CAPTION_STYLES } from '../src/presets/captionStyles';
 import { cueAt } from '../src/engine/captionGrouper';
 import { useTheme } from '../src/theme/useTheme';
+import { useTabletColumn } from '../src/theme/useTabletColumn';
 import { t } from '../src/i18n';
 import { burner, encodePlan, onBurnProgress } from '../modules/caption-burner';
 import { showInterstitial } from '../src/services/ads';
@@ -21,6 +22,7 @@ import { CaptionOverlay } from '../src/components/CaptionOverlay';
 
 export default function StudioScreen() {
   const theme = useTheme();
+  const tabletColumn = useTabletColumn();
   const router = useRouter();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { source, cues, styleId, progress, isPro, setStyle, setStage, setProgress } = useCaptionStore();
@@ -139,7 +141,7 @@ export default function StudioScreen() {
 
   return (
     <SafeAreaView edges={['bottom']} className="flex-1 px-5" style={{ backgroundColor: theme.background }}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32, ...tabletColumn }}>
         <View className="items-center mt-4">
           <View
             style={{ width: previewWidth, height: previewHeight, borderRadius: 20, overflow: 'hidden', backgroundColor: '#000' }}
