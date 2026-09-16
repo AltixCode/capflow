@@ -31,13 +31,31 @@ export const CaptionOverlay: React.FC<Props> = ({ box, style, scale }) => {
   const width = box.maxWidth * scale;
   const strokeWidth = style.strokeColor ? fontSize * style.strokeRatio : 0;
 
+  // Draw into the WHOLE frame, not into the text box.
+  //
+  // The plan's widths come from ADVANCE_RATIO, an average glyph width, so a
+  // line the layout believes fits can render a few percent wider. The layout
+  // keeps a side margin for exactly that, and its comment says an error there
+  // "costs margin, not legibility" -- but that is only true if the canvas is
+  // wider than the box. Sizing the Svg to maxWidth made the viewport the same
+  // width as the text, so any underestimate was clipped instead of eating the
+  // margin, and because the text is centred it was clipped at BOTH edges: a
+  // caption reading "DEMO RECORDING. THIS" lost the D and the final S.
+  //
+  // It is length-dependent, so short captions looked perfect and long ones were
+  // truncated -- in a captions app, in the one frame a buyer looks at.
+  //
+  // centerX is half the video width, so this is the full frame; the container
+  // already spans it and centres us within it.
+  const frameWidth = box.centerX * 2 * scale;
+
   // SVG places text on its baseline; the plan measures from the top of the
   // line box, so each line drops by the line box plus the cap offset.
   const baseline = (index: number) => index * lineHeight + (lineHeight + fontSize * 0.72) / 2;
 
   const lines = (fill: string, stroke?: string) => (
     <SvgText
-      x={width / 2}
+      x={frameWidth / 2}
       y={0}
       fontSize={fontSize}
       fontWeight="800"
@@ -48,7 +66,7 @@ export const CaptionOverlay: React.FC<Props> = ({ box, style, scale }) => {
       strokeLinejoin="round"
     >
       {box.lines.map((line, index) => (
-        <TSpan key={index} x={width / 2} y={baseline(index)}>
+        <TSpan key={index} x={frameWidth / 2} y={baseline(index)}>
           {line}
         </TSpan>
       ))}
@@ -79,7 +97,7 @@ export const CaptionOverlay: React.FC<Props> = ({ box, style, scale }) => {
           }}
         />
       ) : null}
-      <Svg width={width} height={height}>
+      <Svg width={frameWidth} height={height}>
         {strokeWidth > 0 ? lines(style.color, style.strokeColor) : null}
         {lines(style.color)}
       </Svg>
