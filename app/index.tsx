@@ -115,7 +115,17 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView edges={['bottom']} className="flex-1 px-5" style={{ backgroundColor: theme.background }}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32, ...tabletColumn }}>
+      {/* `flex: 1`, or this scroll view and the element pinned below it fight
+          for the bottom of the screen. A React Native flex child that sets no
+          flex takes its CONTENT height, so once the content is taller than the
+          room left it overflows into its sibling. Photographed on a 13" iPad
+          listing frame as a page indicator cut in half by the button beneath
+          it. Same defect as the ad-banner overlap fixed across the portfolio;
+          these screens were missed because what sits below them is a button or
+          a footer rather than a banner. */}
+      <ScrollView
+        style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32, ...tabletColumn }}
+      >
         <View className="mt-4 mb-5">
           <View
             className="self-start border px-3 py-1 rounded-full mb-3 flex-row items-center"

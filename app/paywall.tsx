@@ -85,7 +85,17 @@ export default function PaywallScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} className="flex-1" contentContainerStyle={tabletColumn}>
+      {/* `flex: 1`, or this scroll view and the element pinned below it fight
+          for the bottom of the screen. A React Native flex child that sets no
+          flex takes its CONTENT height, so once the content is taller than the
+          room left it overflows into its sibling. Photographed on a 13" iPad
+          listing frame as a page indicator cut in half by the button beneath
+          it. Same defect as the ad-banner overlap fixed across the portfolio;
+          these screens were missed because what sits below them is a button or
+          a footer rather than a banner. */}
+      <ScrollView
+        style={{ flex: 1 }} showsVerticalScrollIndicator={false} className="flex-1" contentContainerStyle={tabletColumn}
+      >
         <View className="mb-6 rounded-2xl border p-5" style={{ borderColor: theme.primaryBorder, backgroundColor: theme.primaryLight }}>
           <Text className="mb-1 text-xs font-bold uppercase tracking-wider" style={{ color: theme.primary }}>
             {t("antiSubTitle")}
