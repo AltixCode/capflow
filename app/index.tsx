@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+// The imperative `router`, not `useRouter()`. The navigation below runs in the
+// continuation after `await`ing a native picker, and iOS can tear the presenting
+// view down around that sheet -- so the context the hook captured at render may
+// be gone by the time it resumes, and the hook's router throws "Couldn't find a
+// navigation context" from a getKey getter. The imperative router reads no
+// context and is what expo-router provides for navigating outside a render.
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { Captions, Film, ShieldCheck, Sparkles, Download, Clock } from 'lucide-react-native';
@@ -20,7 +26,6 @@ import { transcribeVideo } from '../src/services/transcriber';
 export default function HomeScreen() {
   const theme = useTheme();
   const tabletColumn = useTabletColumn();
-  const router = useRouter();
   const { source, stage, progress, isPro, setSource, setWords, setStage, setProgress, overFreeLimit } =
     useCaptionStore();
 
