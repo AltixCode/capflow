@@ -83,6 +83,10 @@ export async function showPrivacyOptionsForm(): Promise<boolean> {
  */
 export async function requestTrackingIfNeeded(): Promise<boolean> {
   if (Platform.OS !== 'ios') return true;
+  // simctl has no privacy-grant service for ATT, so the system prompt is unavoidable during
+  // automated screenshot capture -- it covers the app and collapses the accessibility tree.
+  // __DEV__ gate means this refuses to run outright in a release build, so it cannot ship.
+  if (__DEV__ && process.env.EXPO_PUBLIC_CAPTURE_MODE === '1') return false;
   try {
     const { status } = await requestTrackingPermissionsAsync();
     return status === 'granted';
