@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform } from "react-native";
 import mobileAds, {
   AdEventType,
   AdsConsent,
@@ -6,11 +6,15 @@ import mobileAds, {
   InterstitialAd,
   MaxAdContentRating,
   TestIds,
-} from 'react-native-google-mobile-ads';
-import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
-import { ADMOB, IS_DEV } from '../config/env';
-import { summariseConsent, type ConsentInfoLike, type ConsentSummary } from './consentPolicy';
-import { useAdsStore } from '../store/adsStore';
+} from "react-native-google-mobile-ads";
+import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
+import { ADMOB, IS_DEV } from "../config/env";
+import {
+  summariseConsent,
+  type ConsentInfoLike,
+  type ConsentSummary,
+} from "./consentPolicy";
+import { useAdsStore } from "../store/adsStore";
 
 /**
  * Thin AdMob wrapper: a banner and an interstitial, no rewarded ad. Every entry point resolves
@@ -19,7 +23,9 @@ import { useAdsStore } from '../store/adsStore';
  */
 
 const interstitialUnitId =
-  IS_DEV || !ADMOB.interstitialUnitId ? TestIds.INTERSTITIAL : ADMOB.interstitialUnitId;
+  IS_DEV || !ADMOB.interstitialUnitId
+    ? TestIds.INTERSTITIAL
+    : ADMOB.interstitialUnitId;
 export const bannerUnitId =
   IS_DEV || !ADMOB.bannerUnitId ? TestIds.ADAPTIVE_BANNER : ADMOB.bannerUnitId;
 
@@ -27,7 +33,10 @@ const AD_TIMEOUT_MS = 8000;
 
 let initialized = false;
 let interstitial: InterstitialAd | null = null;
-let consent: ConsentSummary = { canServeAds: false, offerPrivacyOptions: false };
+let consent: ConsentSummary = {
+  canServeAds: false,
+  offerPrivacyOptions: false,
+};
 
 function applyConsent(next: ConsentSummary): void {
   consent = next;
@@ -35,7 +44,7 @@ function applyConsent(next: ConsentSummary): void {
   // Whether ads may be served is invisible from the outside -- a withheld consent and a broken
   // integration look identical, an app with no banner -- so the decision is logged in
   // development. Release builds say nothing.
-  if (IS_DEV) console.log('[ads] consent', JSON.stringify(next));
+  if (IS_DEV) console.log("[ads] consent", JSON.stringify(next));
 }
 
 export function getConsentSummary(): ConsentSummary {
@@ -55,10 +64,15 @@ async function gatherConsent(): Promise<ConsentSummary> {
      * no options at all and let the SDK decide from the real location.
      */
     const options = IS_DEV
-      ? { debugGeography: AdsConsentDebugGeography.OTHER, testDeviceIdentifiers: [] }
+      ? {
+          debugGeography: AdsConsentDebugGeography.OTHER,
+          testDeviceIdentifiers: [],
+        }
       : undefined;
 
-    const info = (await AdsConsent.gatherConsent(options)) as unknown as ConsentInfoLike;
+    const info = (await AdsConsent.gatherConsent(
+      options,
+    )) as unknown as ConsentInfoLike;
     return summariseConsent(info);
   } catch {
     // Fail closed: no consent information means no ads, and the app works regardless.
@@ -69,7 +83,8 @@ async function gatherConsent(): Promise<ConsentSummary> {
 /** Reopens the consent form. Google requires this entry point wherever it reports REQUIRED. */
 export async function showPrivacyOptionsForm(): Promise<boolean> {
   try {
-    const info = (await AdsConsent.showPrivacyOptionsForm()) as unknown as ConsentInfoLike;
+    const info =
+      (await AdsConsent.showPrivacyOptionsForm()) as unknown as ConsentInfoLike;
     applyConsent(summariseConsent(info));
     return true;
   } catch {
@@ -82,10 +97,14 @@ export async function showPrivacyOptionsForm(): Promise<boolean> {
  * app is interactive, and a denial is a normal outcome — we simply fall back to non-personalised.
  */
 export async function requestTrackingIfNeeded(): Promise<boolean> {
-  if (Platform.OS !== 'ios') return true;
+  if (Platform.OS !== "ios") return true;
+  // simctl has no privacy-grant service for ATT, so the system prompt is unavoidable during
+  // automated screenshot capture -- it covers the app and collapses the accessibility tree.
+  // __DEV__ gate means this refuses to run outright in a release build, so it cannot ship.
+  if (__DEV__ && process.env.EXPO_PUBLIC_CAPTURE_MODE === "1") return false;
   try {
     const { status } = await requestTrackingPermissionsAsync();
-    return status === 'granted';
+    return status === "granted";
   } catch {
     return false;
   }
@@ -111,7 +130,7 @@ export async function initializeAds(): Promise<void> {
     preloadInterstitial();
   } catch (error) {
     // Ads are optional; the app works regardless.
-    if (IS_DEV) console.log('[ads] initialisation failed', String(error));
+    if (IS_DEV) console.log("[ads] initialisation failed", String(error));
   }
 }
 
@@ -157,8 +176,12 @@ export async function showInterstitial(): Promise<boolean> {
   }
 
   const shown = await withTimeout<boolean>((finish) => {
-    const unsubscribeClosed = ad.addAdEventListener(AdEventType.CLOSED, () => finish(true));
-    const unsubscribeError = ad.addAdEventListener(AdEventType.ERROR, () => finish(false));
+    const unsubscribeClosed = ad.addAdEventListener(AdEventType.CLOSED, () =>
+      finish(true),
+    );
+    const unsubscribeError = ad.addAdEventListener(AdEventType.ERROR, () =>
+      finish(false),
+    );
     const unsubscribeLoaded = ad.addAdEventListener(AdEventType.LOADED, () => {
       ad.show().catch(() => finish(false));
     });
