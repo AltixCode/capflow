@@ -10,13 +10,12 @@ import {
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  Sparkles,
+  Captions,
   BadgeCheck,
   Layers,
   ShoppingBag,
   Tag,
   ShieldCheck,
-  Check,
   X,
 } from "lucide-react-native";
 import { usePaywall } from "../src/hooks/usePaywall";
@@ -33,47 +32,18 @@ export default function PaywallScreen() {
   const { ctaLabel, loading, errorMsg, handlePurchase, handleRestore } =
     usePaywall(() => router.back());
 
-  const features = [
-    // Ad removal leads the list: it is what the store product is named after, and it is the
-    // benefit a free user has been feeling rather than reading about.
-    {
-      icon: <BadgeCheck size={20} color={theme.primary} />,
-      title: t("featAdsTitle"),
-      desc: t("featAdsDesc"),
-    },
-    {
-      icon: <Layers size={20} color={theme.accent} />,
-      title: t("feat1Title"),
-      desc: t("feat1Desc"),
-    },
-    {
-      icon: <ShoppingBag size={20} color={theme.purple} />,
-      title: t("feat2Title"),
-      desc: t("feat2Desc"),
-    },
-    {
-      icon: <Tag size={20} color={theme.warning} />,
-      title: t("feat3Title"),
-      desc: t("feat3Desc"),
-    },
-    {
-      icon: <ShieldCheck size={20} color={theme.success} />,
-      title: t("feat4Title"),
-      desc: t("feat4Desc"),
-    },
+  const entries = [
+    { icon: <BadgeCheck size={18} color={theme.primary} />, title: t("featAdsTitle"), desc: t("featAdsDesc") },
+    { icon: <Layers size={18} color={theme.accent} />, title: t("feat1Title"), desc: t("feat1Desc") },
+    { icon: <ShoppingBag size={18} color={theme.purple} />, title: t("feat2Title"), desc: t("feat2Desc") },
+    { icon: <Tag size={18} color={theme.warning} />, title: t("feat3Title"), desc: t("feat3Desc") },
+    { icon: <ShieldCheck size={18} color={theme.success} />, title: t("feat4Title"), desc: t("feat4Desc") },
   ];
 
   return (
     <View className="flex-1 px-6 py-4" style={{ backgroundColor: theme.background }}>
-      <View className="mt-2 mb-4 flex-row items-center justify-between">
-        <View className="flex-row items-center">
-          <View className="mr-2.5 rounded-xl bg-blue-500/20 p-2">
-            <Sparkles size={20} color={theme.primary} />
-          </View>
-          <Text className="text-xl font-extrabold" style={{ color: theme.text }}>
-            {t("paywallTitle")}
-          </Text>
-        </View>
+      <View className="mb-1 flex-row items-center justify-between">
+        <Captions size={22} color={theme.primary} />
         <TouchableOpacity
           onPress={() => router.back()}
           accessibilityRole="button"
@@ -85,127 +55,106 @@ export default function PaywallScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* `flex: 1`, or this scroll view and the element pinned below it fight
-          for the bottom of the screen. A React Native flex child that sets no
-          flex takes its CONTENT height, so once the content is taller than the
-          room left it overflows into its sibling. Photographed on a 13" iPad
-          listing frame as a page indicator cut in half by the button beneath
-          it. Same defect as the ad-banner overlap fixed across the portfolio;
-          these screens were missed because what sits below them is a button or
-          a footer rather than a banner. */}
-      {/* The scroll area and the pinned CTA are ONE block, centred together.
-          Centring the scroll content alone was worse than the problem it
-          replaced: on this shape the CTA is pinned OUTSIDE the ScrollView, so
-          only the middle moved and a second void opened above the content.
-          Measured on a 13" iPad: header 11%, void 25%, content 25%, void 26%,
-          CTA 13% -- 51% empty in two slabs, against one 45% slab before.
-          Wrapping both and letting the scroll view hug its content keeps the
-          button attached to what it is buying. */}
       <View style={{ flex: 1, justifyContent: 'center' }}>
-      <ScrollView
-        style={{ flexGrow: 0, flexShrink: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ ...tabletColumn }}
-      >
-        <View className="mb-6 rounded-2xl border p-5" style={{ borderColor: theme.primaryBorder, backgroundColor: theme.primaryLight }}>
-          <Text className="mb-1 text-xs font-bold uppercase tracking-wider" style={{ color: theme.primary }}>
-            {t("antiSubTitle")}
+        <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ ...tabletColumn }}>
+          <Text className="mb-1 text-2xl font-extrabold" style={{ color: theme.text }}>
+            {t("paywallTitle")}
           </Text>
-          <Text className="text-base font-bold leading-snug" style={{ color: theme.text }}>
-            {t("antiSubHeadline")}
-          </Text>
-          <Text className="mt-2 text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
+          <Text className="mb-6 text-sm italic leading-relaxed" style={{ color: theme.textSecondary }}>
             {t("antiSubDesc")}
           </Text>
-        </View>
 
-        <View className="mb-6 gap-4">
-          {features.map((f) => (
-            <View key={f.title} className="flex-row items-start">
-              <View className="mr-3.5 rounded-xl border p-2.5" style={{ borderColor: theme.cardBorder, backgroundColor: theme.card }}>
-                {f.icon}
-              </View>
-              <View className="flex-1">
-                <Text className="text-sm font-bold" style={{ color: theme.text }}>{f.title}</Text>
-                <Text className="mt-0.5 text-xs leading-relaxed" style={{ color: theme.textSecondary }}>
-                  {f.desc}
+          <View>
+            {entries.map((e, i) => (
+              <View
+                key={e.title}
+                className="py-3.5"
+                style={i > 0 ? { borderTopWidth: 1, borderColor: theme.cardBorder } : undefined}
+              >
+                <View className="flex-row items-center">
+                  {e.icon}
+                  <Text className="ml-2 text-sm font-extrabold" style={{ color: theme.text }}>
+                    {e.title}
+                  </Text>
+                </View>
+                <Text className="mt-1 text-sm leading-relaxed" style={{ color: theme.textSecondary }}>
+                  {e.desc}
                 </Text>
               </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
 
-        {errorMsg ? (
-          <Text
-            accessibilityRole="alert"
-            className="mb-3 text-center text-xs" style={{ color: theme.danger }}
-          >
-            {errorMsg}
-          </Text>
-        ) : null}
-      </ScrollView>
+          {errorMsg ? (
+            <Text
+              accessibilityRole="alert"
+              className="mt-3 text-center text-xs" style={{ color: theme.danger }}
+            >
+              {errorMsg}
+            </Text>
+          ) : null}
+        </ScrollView>
 
-      <View
-        className="pt-2"
-        style={{ paddingBottom: Math.max(insets.bottom, 16) + 8 }}
-      >
-        <TouchableOpacity
-          onPress={handlePurchase}
-          disabled={loading}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel={ctaLabel}
-          accessibilityState={{ disabled: loading, busy: loading }}
-          className={`min-h-[56px] flex-row items-center justify-center rounded-2xl p-4 ${
-            loading ? "bg-blue-900" : "bg-blue-600 active:bg-blue-500"
-          }`}
+        <View
+          className="pt-2"
+          style={{ paddingBottom: Math.max(insets.bottom, 16) + 8 }}
         >
-          {loading ? (
-            <ActivityIndicator color={theme.onPrimary} />
-          ) : (
-            <>
-              <Text className="mr-2 text-base font-extrabold" style={{ color: theme.onPrimary }}>
+          <TouchableOpacity
+            onPress={handlePurchase}
+            disabled={loading}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={ctaLabel}
+            accessibilityState={{ disabled: loading, busy: loading }}
+            className={`min-h-[56px] flex-row items-center justify-center rounded-2xl p-4 ${
+              loading ? "bg-blue-900" : "bg-blue-600 active:bg-blue-500"
+            }`}
+          >
+            {loading ? (
+              <ActivityIndicator color={theme.onPrimary} />
+            ) : (
+              <Text className="text-base font-extrabold" style={{ color: theme.onPrimary }}>
                 {ctaLabel}
               </Text>
-              <Check size={18} color={theme.onPrimary} strokeWidth={3} />
-            </>
-          )}
-        </TouchableOpacity>
+            )}
+          </TouchableOpacity>
 
-        <View className="mt-4 flex-row items-center justify-center gap-5">
-          <TouchableOpacity
-            onPress={handleRestore}
-            disabled={loading}
-            accessibilityRole="button"
-            hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-          >
-            <Text className="text-xs underline" style={{ color: theme.textSecondary }}>
-              {t("restorePurchases")}
-            </Text>
-          </TouchableOpacity>
-          <Text className="text-xs" style={{ color: theme.textMuted }}>•</Text>
-          <Text className="text-xs" style={{ color: theme.textMuted }}>{t("oneTimePayment")}</Text>
-        </View>
+          <Text className="mt-3 text-center text-xs" style={{ color: theme.textMuted }}>
+            {t("oneTimePayment")}
+          </Text>
 
-        <View className="mt-3 flex-row items-center justify-center gap-5">
-          <TouchableOpacity
-            onPress={() => Linking.openURL(TERMS_OF_USE_URL)}
-            accessibilityRole="link"
-            hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-          >
-            <Text className="text-xs underline" style={{ color: theme.textMuted }}>
-              {t("termsOfUse")}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
-            accessibilityRole="link"
-            hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-          >
-            <Text className="text-xs underline" style={{ color: theme.textMuted }}>
-              {t("privacyPolicy")}
-            </Text>
-          </TouchableOpacity>
+          <View className="mt-3 flex-row items-center justify-center gap-5">
+            <TouchableOpacity
+              onPress={handleRestore}
+              disabled={loading}
+              accessibilityRole="button"
+              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+            >
+              <Text className="text-xs underline" style={{ color: theme.textSecondary }}>
+                {t("restorePurchases")}
+              </Text>
+            </TouchableOpacity>
+            <Text className="text-xs" style={{ color: theme.textMuted }}>•</Text>
+            <TouchableOpacity
+              onPress={() => Linking.openURL(TERMS_OF_USE_URL)}
+              accessibilityRole="link"
+              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+            >
+              <Text className="text-xs underline" style={{ color: theme.textMuted }}>
+                {t("termsOfUse")}
+              </Text>
+            </TouchableOpacity>
+            <Text className="text-xs" style={{ color: theme.textMuted }}>•</Text>
+            <TouchableOpacity
+              onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+              accessibilityRole="link"
+              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+            >
+              <Text className="text-xs underline" style={{ color: theme.textMuted }}>
+                {t("privacyPolicy")}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
       </View>
     </View>
   );
