@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Modal, TextInput, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 // migration error instead of saving; the legacy entry point still works.
 import * as MediaLibrary from 'expo-media-library/legacy';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { Crown, Download, Type } from 'lucide-react-native';
+import { Crown, Download, Edit3, Type, X, Check } from 'lucide-react-native';
 import { useCaptionStore } from '../src/store/useCaptionStore';
 import { CAPTION_STYLES } from '../src/presets/captionStyles';
 import { cueAt } from '../src/engine/captionGrouper';
@@ -25,7 +25,7 @@ export default function StudioScreen() {
   const tabletColumn = useTabletColumn();
   const router = useRouter();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const { source, cues, styleId, progress, isPro, setStyle, setStage, setProgress } = useCaptionStore();
+  const { source, cues, styleId, progress, isPro, setStyle, setStage, setProgress, updateCueText } = useCaptionStore();
 
   // Built here rather than read through a store selector. The store's plan() is
   // a getter that returns a fresh object each call, so selecting it hands the
@@ -36,6 +36,8 @@ export default function StudioScreen() {
 
   const [time, setTime] = useState(0);
   const [exporting, setExporting] = useState(false);
+  const [editingCueIndex, setEditingCueIndex] = useState<number | null>(null);
+  const [editText, setEditText] = useState('');
 
   const player = useVideoPlayer(source?.uri ?? null, (instance) => {
     instance.loop = true;
@@ -73,6 +75,27 @@ export default function StudioScreen() {
 
   const activeIndex = useMemo(() => cueAt(cues, time), [cues, time]);
   const activeBox = plan && activeIndex >= 0 ? plan.boxes[activeIndex] : null;
+
+  const handleOpenEdit = useCallback((index: number) => {
+    Haptics.selectionAsync();
+    player.pause();
+    setEditingCueIndex(index);
+    setEditText(cues[index]?.text ?? '');
+  }, [cues, player]);
+
+  const handleSaveEdit = useCallback(() => {
+    if (editingCueIndex !== null && editText.trim()) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      updateCueText(editingCueIndex, editText.trim());
+    }
+    setEditingCueIndex(null);
+    player.play();
+  }, [editingCueIndex, editText, updateCueText, player]);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingCueIndex(null);
+    player.play();
+  }, [player]);
 
   const maybeShowInterstitial = useCallback(async () => {
     const { completions, lastInterstitialAt, markInterstitialShown } = useAdsStore.getState();
@@ -172,17 +195,33 @@ export default function StudioScreen() {
           {t('previewHint')}
         </Text>
 
-        <View className="flex-row items-center mb-2">
-          <Type size={14} color={theme.textMuted} />
-          <Text className="text-xs font-semibold tracking-widest ml-1.5" style={{ color: theme.textMuted }}>
-            {t('styleTitle')}
-          </Text>
-          <Text className="text-[11px] ml-auto" style={{ color: theme.textMuted }}>
-            {t('captionCount', { count: cues.length })}
-          </Text>
+        {/* Captions Header & Edit Button */}
+        <View className="flex-row items-center mb-2 justify-between">
+          <View className="flex-row items-center">
+            <Type size={14} color={theme.textMuted} />
+            <Text className="text-xs font-semibold tracking-widest ml-1.5" style={{ color: theme.textMuted }}>
+              {t('styleTitle')}
+            </Text>
+            <Text className="text-[11px] ml-2" style={{ color: theme.textMuted }}>
+              {t('captionCount', { count: cues.length })}
+            </Text>
+          </View>
+          {activeIndex >= 0 ? (
+            <TouchableOpacity
+              onPress={() => handleOpenEdit(activeIndex)}
+              accessibilityRole="button"
+              className="flex-row items-center px-2.5 py-1 rounded-full border"
+              style={{ backgroundColor: theme.primaryLight, borderColor: theme.primaryBorder }}
+            >
+              <Edit3 size={12} color={theme.primary} />
+              <Text className="text-xs font-semibold ml-1" style={{ color: theme.primary }}>
+                {t('editCaptions')}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
           {CAPTION_STYLES.map((item) => {
             const locked = item.pro && !isPro;
             const selected = item.id === styleId;
@@ -213,6 +252,39 @@ export default function StudioScreen() {
           })}
         </ScrollView>
 
+        {/* Caption timeline / list for editing */}
+        <View className="mb-5 border rounded-2xl p-3" style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}>
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-xs font-bold tracking-wider" style={{ color: theme.textSecondary }}>
+              {t('editCaptions')}
+            </Text>
+          </View>
+          <ScrollView nestedScrollEnabled style={{ maxHeight: 150 }} showsVerticalScrollIndicator={true}>
+            {cues.map((cue, idx) => {
+              const isCurrent = idx === activeIndex;
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => handleOpenEdit(idx)}
+                  className="flex-row items-center py-2 px-2 rounded-xl mb-1 border"
+                  style={{
+                    backgroundColor: isCurrent ? theme.primaryLight : 'transparent',
+                    borderColor: isCurrent ? theme.primary : 'transparent',
+                  }}
+                >
+                  <Text className="text-xs font-mono mr-2" style={{ color: theme.textMuted, width: 44 }}>
+                    {cue.start.toFixed(1)}s
+                  </Text>
+                  <Text className="text-sm flex-1 font-medium" numberOfLines={1} style={{ color: theme.text }}>
+                    {cue.text}
+                  </Text>
+                  <Edit3 size={14} color={theme.textMuted} className="ml-2" />
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
         <TouchableOpacity
           onPress={handleExport}
           disabled={exporting}
@@ -233,6 +305,68 @@ export default function StudioScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Edit Modal */}
+      <Modal
+        visible={editingCueIndex !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelEdit}
+      >
+        <View className="flex-1 justify-center items-center px-5" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <View
+            className="w-full max-w-md p-5 rounded-3xl border shadow-xl"
+            style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
+          >
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-base font-bold" style={{ color: theme.text }}>
+                {t('editCueTitle')} {editingCueIndex !== null ? `(${cues[editingCueIndex]?.start.toFixed(1)}s - ${cues[editingCueIndex]?.end.toFixed(1)}s)` : ''}
+              </Text>
+              <TouchableOpacity onPress={handleCancelEdit} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <X size={20} color={theme.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              value={editText}
+              onChangeText={setEditText}
+              multiline
+              autoFocus
+              className="p-3 rounded-2xl border text-base mb-4"
+              style={{
+                backgroundColor: theme.background,
+                borderColor: theme.cardBorder,
+                color: theme.text,
+                minHeight: 80,
+                textAlignVertical: 'top',
+              }}
+            />
+
+            <View className="flex-row justify-end space-x-3">
+              <TouchableOpacity
+                onPress={handleCancelEdit}
+                className="px-4 py-2.5 rounded-xl border mr-2"
+                style={{ borderColor: theme.cardBorder }}
+              >
+                <Text className="font-semibold text-sm" style={{ color: theme.textSecondary }}>
+                  {t('cancel')}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleSaveEdit}
+                className="px-4 py-2.5 rounded-xl flex-row items-center"
+                style={{ backgroundColor: theme.primary }}
+              >
+                <Check size={16} color={theme.onPrimary} className="mr-1.5" />
+                <Text className="font-bold text-sm" style={{ color: theme.onPrimary }}>
+                  {t('saveChanges')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

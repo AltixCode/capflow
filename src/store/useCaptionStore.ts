@@ -27,6 +27,8 @@ interface CaptionState {
 
   setSource: (source: Source | null) => void;
   setWords: (words: Word[]) => void;
+  setCues: (cues: Cue[]) => void;
+  updateCueText: (index: number, newText: string) => void;
   setStyle: (id: string) => void;
   setStage: (stage: Stage, progress?: number) => void;
   setProgress: (progress: number) => void;
@@ -52,6 +54,34 @@ export const useCaptionStore = create<CaptionState>((set, get) => ({
 
   setSource: (source) => set({ source, words: [], cues: [], stage: 'idle', progress: 0 }),
   setWords: (words) => set({ words, cues: groupIntoCues(words) }),
+  setCues: (cues) => set({ cues }),
+  updateCueText: (index, newText) => {
+    const { cues } = get();
+    if (index < 0 || index >= cues.length) return;
+    const oldCue = cues[index];
+    const words = oldCue.words.length > 0 ? oldCue.words : [];
+    const trimmed = newText.trim();
+    // Split into words if user entered multiple words, preserving timing span
+    const splitTokens = trimmed.split(/\s+/).filter(Boolean);
+    const duration = oldCue.end - oldCue.start;
+    const perWord = splitTokens.length > 0 ? duration / splitTokens.length : duration;
+    const updatedWords = splitTokens.map((t, i) => ({
+      text: t,
+      start: oldCue.start + i * perWord,
+      end: oldCue.start + (i + 1) * perWord,
+    }));
+    const updatedCue: Cue = {
+      words: updatedWords.length > 0 ? updatedWords : words,
+      start: oldCue.start,
+      end: oldCue.end,
+      get text() {
+        return trimmed;
+      },
+    };
+    const nextCues = [...cues];
+    nextCues[index] = updatedCue;
+    set({ cues: nextCues });
+  },
   setStyle: (id) => set({ styleId: styleById(id).id }),
   setStage: (stage, progress = 0) => set({ stage, progress }),
   setProgress: (progress) => set({ progress }),

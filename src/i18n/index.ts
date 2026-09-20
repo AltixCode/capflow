@@ -37,6 +37,9 @@ export const translations = {
   "en": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "Edit Captions",
+    "editCueTitle": "Edit Caption",
+    "saveChanges": "Save Changes",
     "adLabel": "Advertisement",
     "featAdsTitle": "No ads, ever",
     "featAdsDesc": "One purchase removes every ad in CapFlow, on every device you sign in with.",
@@ -124,6 +127,9 @@ export const translations = {
   "es": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "Editar subtítulos",
+    "editCueTitle": "Editar subtítulo",
+    "saveChanges": "Guardar cambios",
     "adLabel": "Publicidad",
     "featAdsTitle": "Sin anuncios, nunca",
     "featAdsDesc": "Una sola compra elimina todos los anuncios de CapFlow, en todos los dispositivos con tu cuenta.",
@@ -211,6 +217,9 @@ export const translations = {
   "fr": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "Modifier les sous-titres",
+    "editCueTitle": "Modifier le sous-titre",
+    "saveChanges": "Enregistrer les modifications",
     "adLabel": "Publicité",
     "featAdsTitle": "Aucune publicité, jamais",
     "featAdsDesc": "Un seul achat supprime toutes les publicités de CapFlow, sur tous vos appareils.",
@@ -298,6 +307,9 @@ export const translations = {
   "de": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "Untertitel bearbeiten",
+    "editCueTitle": "Untertitel bearbeiten",
+    "saveChanges": "Änderungen speichern",
     "adLabel": "Werbung",
     "featAdsTitle": "Nie wieder Werbung",
     "featAdsDesc": "Ein Kauf entfernt jede Werbung in CapFlow – auf allen Geräten mit deinem Konto.",
@@ -385,6 +397,9 @@ export const translations = {
   "ru": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "Изменить субтитры",
+    "editCueTitle": "Изменить субтитр",
+    "saveChanges": "Сохранить изменения",
     "adLabel": "Реклама",
     "featAdsTitle": "Никакой рекламы",
     "featAdsDesc": "Одна покупка убирает всю рекламу в CapFlow на всех ваших устройствах.",
@@ -472,6 +487,9 @@ export const translations = {
   "zh": {
     "appName": "CapFlow",
     "proBadge": "专业版",
+    "editCaptions": "编辑字幕",
+    "editCueTitle": "编辑字幕条目",
+    "saveChanges": "保存修改",
     "adLabel": "广告",
     "featAdsTitle": "永远没有广告",
     "featAdsDesc": "一次购买即可移除 CapFlow 中的所有广告，并在你登录的所有设备上生效。",
@@ -559,6 +577,9 @@ export const translations = {
   "ja": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "字幕を編集",
+    "editCueTitle": "字幕の編集",
+    "saveChanges": "変更を保存",
     "adLabel": "広告",
     "featAdsTitle": "広告は一切なし",
     "featAdsDesc": "一度の購入で CapFlow のすべての広告が消え、同じアカウントの全端末に適用されます。",
@@ -646,6 +667,9 @@ export const translations = {
   "pt": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "Editar legendas",
+    "editCueTitle": "Editar legenda",
+    "saveChanges": "Salvar alterações",
     "adLabel": "Publicidade",
     "featAdsTitle": "Sem anúncios, nunca",
     "featAdsDesc": "Uma única compra remove todos os anúncios do CapFlow, em todos os seus dispositivos.",
@@ -733,6 +757,9 @@ export const translations = {
   "ko": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "자막 편집",
+    "editCueTitle": "자막 수정",
+    "saveChanges": "변경사항 저장",
     "adLabel": "광고",
     "featAdsTitle": "광고 없음",
     "featAdsDesc": "한 번만 구매하면 CapFlow의 모든 광고가 사라지며, 로그인한 모든 기기에 적용됩니다.",
@@ -820,6 +847,9 @@ export const translations = {
   "it": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "Modifica sottotitoli",
+    "editCueTitle": "Modifica sottotitolo",
+    "saveChanges": "Salva modifiche",
     "adLabel": "Pubblicità",
     "featAdsTitle": "Mai più pubblicità",
     "featAdsDesc": "Un solo acquisto elimina tutta la pubblicità di CapFlow, su tutti i tuoi dispositivi.",
@@ -907,6 +937,9 @@ export const translations = {
   "tr": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "Altyazıları Düzenle",
+    "editCueTitle": "Altyazıyı Düzenle",
+    "saveChanges": "Değişiklikleri Kaydet",
     "adLabel": "Reklam",
     "featAdsTitle": "Hiç reklam yok",
     "featAdsDesc": "Tek bir satın alma CapFlow'daki tüm reklamları kaldırır; oturum açtığınız her cihazda geçerlidir.",
@@ -994,6 +1027,9 @@ export const translations = {
   "ar": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "تعديل التسميات التوضيحية",
+    "editCueTitle": "تعديل التسمية التوضيحية",
+    "saveChanges": "حفظ التغييرات",
     "adLabel": "إعلان",
     "featAdsTitle": "بلا إعلانات، إلى الأبد",
     "featAdsDesc": "عملية شراء واحدة تزيل كل إعلان في CapFlow، على كل جهاز تسجّل الدخول منه.",
@@ -1081,6 +1117,9 @@ export const translations = {
   "fa": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "ویرایش زیرنویس‌ها",
+    "editCueTitle": "ویرایش زیرنویس",
+    "saveChanges": "ذخیره تغییرات",
     "adLabel": "تبلیغ",
     "featAdsTitle": "بدون تبلیغ، برای همیشه",
     "featAdsDesc": "یک خرید، همهٔ تبلیغ‌های CapFlow را روی هر دستگاهی که با آن وارد می‌شوید برمی‌دارد.",
@@ -1168,6 +1207,9 @@ export const translations = {
   "el": {
     "appName": "CapFlow",
     "proBadge": "PRO",
+    "editCaptions": "Επεξεργασία υποτίτλων",
+    "editCueTitle": "Επεξεργασία υπότιτλου",
+    "saveChanges": "Αποθήκευση αλλαγών",
     "adLabel": "Διαφήμιση",
     "featAdsTitle": "Καθόλου διαφημίσεις",
     "featAdsDesc": "Μία αγορά αφαιρεί κάθε διαφήμιση στο CapFlow, σε όλες τις συσκευές σας.",

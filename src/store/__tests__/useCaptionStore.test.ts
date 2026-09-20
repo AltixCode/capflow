@@ -75,4 +75,13 @@ describe('useCaptionStore', () => {
     useCaptionStore.getState().setStyle('plate');
     expect(useCaptionStore.getState().plan()!.style.id).toBe('plate');
   });
+
+  it('updates cue text and recalculates the burn plan', () => {
+    useCaptionStore.getState().setSource(SOURCE);
+    useCaptionStore.getState().setWords(WORDS);
+    expect(useCaptionStore.getState().cues[0].text).toBe('ship it');
+    useCaptionStore.getState().updateCueText(0, 'ship it now');
+    expect(useCaptionStore.getState().cues[0].text).toBe('ship it now');
+    expect(useCaptionStore.getState().plan()!.boxes[0].text).toBe('SHIP IT NOW');
+  });
 });
